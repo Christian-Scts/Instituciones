@@ -18,7 +18,7 @@ Route::prefix('pui')
             Route::post('/desactivar-reporte', [PuiWebhookController::class, 'desactivarReporte']);
         });
 
-        // Simulaci贸n local
+        // Simulacion local
         Route::post('/notificar-coincidencia', function (Request $request) {
             Log::info('SIMULACION PUI /notificar-coincidencia', $request->all());
 

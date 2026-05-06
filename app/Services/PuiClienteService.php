@@ -8,8 +8,8 @@ use Illuminate\Support\Facades\Http;
 
 class PuiClienteService
 {
-    /**
-     * LOGIN LOCAL (tu propia API LOCAL)
+    /*
+     * LOGIN LOCAL (API LOCAL)
      */
     public function loginInstitucional(Empresa $empresa)
     {
@@ -33,7 +33,7 @@ class PuiClienteService
             ]);
     }
 
-    /**
+    /*
      *  LOGIN PUI EXTERNA (para producción)
      */
     public function loginPuiExterno(Empresa $empresa)

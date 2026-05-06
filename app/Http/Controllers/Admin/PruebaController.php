@@ -11,28 +11,6 @@ use Illuminate\Support\Facades\Http;
 
 class PruebaController extends Controller
 {
-    public function index_chido(Request $request)
-        {
-            
-           $page = $request->query('page', 1);
-
-    if (!filter_var($page, FILTER_VALIDATE_INT) || (int) $page < 1) {
-        abort(404);
-    }
-
-    $empresas = Empresa::with(['reportes' => function ($q) {
-        $q->whereNull('baja_en')
-          ->whereIn('estatus', ['activo', 'activo_prueba', 'fase_1_completada', 'fase_2_completada', 'monitoreo_continuo'])
-          ->orderByDesc('created_at');
-    }])->orderBy('razon_social')->get();
-
-    $pruebas = PuiPruebaConectividad::with('empresa')
-        ->latest('ejecutada_en')
-        ->paginate(20);
-
-    return view('admin.pruebas.index', compact('empresas', 'pruebas'));
-        }
-
     public function index(Request $request)
     {
         $empresas = Empresa::with(['reportes' => function ($q) {
