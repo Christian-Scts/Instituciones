@@ -8,6 +8,7 @@ use App\Models\Role;
 use App\Models\Usuario;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Hash;
+use App\Support\AdminEmpresaScope;
 use Illuminate\Validation\Rule;
 
 class UsuarioController extends Controller
@@ -32,7 +33,9 @@ class UsuarioController extends Controller
 
     public function create()
     {
-        $empresas = Empresa::orderBy('razon_social')->get();
+        $empresas = AdminEmpresaScope::filtrarEmpresas(
+            Empresa::query()
+        )->orderBy('razon_social')->get();
         $roles = Role::where('activo', true)->orderBy('nombre')->get();
 
         return view('admin.usuarios.create', compact('empresas', 'roles'));
@@ -69,7 +72,9 @@ class UsuarioController extends Controller
     {
         $usuario->load('roles');
 
-        $empresas = Empresa::orderBy('razon_social')->get();
+        $empresas = AdminEmpresaScope::filtrarEmpresas(
+            Empresa::query()
+        )->orderBy('razon_social')->get();
         $roles = Role::where('activo', true)->orderBy('nombre')->get();
 
         $rolesAsignados = $usuario->roles->pluck('id')->toArray();

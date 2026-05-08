@@ -6,6 +6,7 @@ use App\Http\Controllers\Controller;
 use App\Models\Empresa;
 use App\Models\PuiPruebaConectividad;
 use App\Services\PuiClienteService;
+use App\Support\AdminEmpresaScope;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Http;
 
@@ -13,14 +14,23 @@ class PruebaController extends Controller
 {
     public function index(Request $request)
     {
-        $empresas = Empresa::with(['reportes' => function ($q) {
-            $q->whereNull('baja_en')
-            ->whereIn('estatus', ['activo', 'activo_prueba', 'fase_2_completada', 'monitoreo_continuo'])
-            ->orderByDesc('created_at');
-        }])->orderBy('razon_social')->get();
+        $empresas = AdminEmpresaScope::filtrarEmpresas(
+            Empresa::with(['reportes' => function ($q) {
+                $q->whereNull('baja_en')
+                    ->whereIn('estatus', ['activo', 'activo_prueba', 'fase_2_completada', 'monitoreo_continuo'])
+                    ->orderByDesc('created_at');
+            }])
+        )->orderBy('razon_social')->get();
 
-        $pruebas = PuiPruebaConectividad::with('empresa')
-            ->when($request->filled('empresa_id'), fn ($q) => $q->where('empresa_id', $request->integer('empresa_id')))
+        $empresaSesionId = AdminEmpresaScope::empresaId();
+
+        $pruebas = AdminEmpresaScope::filtrarPorEmpresaId(
+                PuiPruebaConectividad::with('empresa')
+            )
+            ->when(
+                $request->filled('empresa_id') && !$empresaSesionId,
+                fn ($q) => $q->where('empresa_id', $request->integer('empresa_id'))
+            )
             ->latest('ejecutada_en')
             ->paginate(20)
             ->withQueryString();
@@ -30,6 +40,7 @@ class PruebaController extends Controller
 
     public function webhook(Empresa $empresa)
     {
+        AdminEmpresaScope::validarEmpresa($empresa->id);
         $url = rtrim($empresa->url_base_api, '/') . '/activar-reporte-prueba';
 
         $payload = [
@@ -92,6 +103,7 @@ class PruebaController extends Controller
 
     public function loginPui(Empresa $empresa, PuiClienteService $clienteService)
     {
+        AdminEmpresaScope::validarEmpresa($empresa->id);
         $status = 500;
         $body = ['error' => 'No se ejecut贸 la prueba'];
 
@@ -125,6 +137,7 @@ class PruebaController extends Controller
     
     public function desactivarReporte(Request $request, Empresa $empresa)
 {
+    AdminEmpresaScope::validarEmpresa($empresa->id);
     $request->validate([
         'id_busqueda' => ['required', 'string'],
         'curp' => ['required', 'string'],

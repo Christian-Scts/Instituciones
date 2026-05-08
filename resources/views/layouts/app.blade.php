@@ -5,7 +5,8 @@
     <title>SOCIO - PUI</title>
     <meta name="viewport" content="width=device-width, initial-scale=1">
 
-    @vite(['resources/css/app.css', 'resources/js/app.js'])
+   @vite(['resources/css/app.css', 'resources/js/app.js'])
+
 </head>
 
 <body class="bg-slate-100 text-slate-900">
@@ -20,51 +21,83 @@
                 <p class="text-blue-100 text-sm">Panel</p>
             </div>
 
-            @php
+         @php
     $menuPorRol = session('menu_por_rol', []);
 @endphp
 
-        <nav class="space-y-5">
-            @forelse($menuPorRol as $grupo)
-                <div>
-                    <div class="px-4 mb-2 text-xs uppercase tracking-wider text-blue-200/80 font-bold">
-                        {{ $grupo['nombre'] }}
-                    </div>
+<nav class="space-y-3" id="sidebar-menu">
+    @forelse($menuPorRol as $grupo)
+        @php
+            $grupoActivo = false;
 
-                    <div class="space-y-1">
-                        @foreach($grupo['items'] as $item)
-                            @php
-                                $active = false;
+            foreach ($grupo['items'] as $item) {
+                foreach (($item['active_patterns'] ?? []) as $pattern) {
+                    if (request()->is($pattern)) {
+                        $grupoActivo = true;
+                        break 2;
+                    }
+                }
+            }
+        @endphp
 
-                                foreach (($item['active_patterns'] ?? []) as $pattern) {
-                                    if (request()->is($pattern)) {
-                                        $active = true;
-                                        break;
-                                    }
-                                }
-                            @endphp
+        <details class="rounded-2xl overflow-hidden group" {{ $grupoActivo ? 'open' : '' }}>
+            <summary
+                class="list-none cursor-pointer flex items-center justify-between px-4 py-3 rounded-xl font-bold transition
+                {{ $grupoActivo ? 'bg-white/15 text-white' : 'text-blue-100 hover:bg-white/10' }}"
+            >
+                <span class="flex items-center gap-2">
+                    <span class="w-2 h-2 rounded-full {{ $grupoActivo ? 'bg-white' : 'bg-blue-300' }}"></span>
+                   @if(!empty($grupo['icono']))
+                        <i class="{{ $grupo['icono'] }} w-5 text-center"></i>
+                    @endif
 
-                            <a href="{{ $item['url'] }}"
-                            class="flex items-center justify-between px-4 py-3 rounded-xl transition
-                                    {{ $active
-                                        ? 'bg-white text-blue-800 font-bold shadow'
-                                        : 'text-white hover:bg-white/10'
-                                    }}">
-                                <span>{{ $item['titulo'] }}</span>
+                {{ $grupo['nombre'] }}
+                </span>
 
-                                @if($active)
-                                    <span class="w-2 h-2 rounded-full bg-blue-700"></span>
-                                @endif
-                            </a>
-                        @endforeach
-                    </div>
-                </div>
-            @empty
-                <div class="px-4 py-3 rounded-xl bg-white/10 text-sm text-blue-100">
-                    Sin menú asignado
-                </div>
-            @endforelse
-        </nav>
+                <span class="text-lg group-open:hidden">+</span>
+                <span class="text-lg hidden group-open:inline">−</span>
+            </summary>
+
+            <div class="mt-2 ml-4 pl-3 border-l border-white/20 space-y-1">
+                @foreach($grupo['items'] as $item)
+                    @php
+                        $active = false;
+
+                        foreach (($item['active_patterns'] ?? []) as $pattern) {
+                            if (request()->is($pattern)) {
+                                $active = true;
+                                break;
+                            }
+                        }
+                    @endphp
+
+                    <a href="{{ $item['url'] }}"
+                       class="flex items-center justify-between px-4 py-2.5 rounded-xl text-sm transition
+                        {{ $active
+                            ? 'bg-white text-blue-800 font-bold shadow'
+                            : 'text-blue-100 hover:bg-white/10'
+                        }}">
+                        <span class="flex items-center gap-2">
+                        @if(!empty($item['icono']))
+                        <i class="{{ $item['icono'] }} w-5 text-center"></i>
+                    @endif
+
+                        {{ $item['titulo'] }}
+                    </span>
+
+                        @if($active)
+                            <span class="w-2 h-2 rounded-full bg-blue-700"></span>
+                        @endif
+                    </a>
+                @endforeach
+            </div>
+        </details>
+    @empty
+        <div class="px-4 py-3 rounded-xl bg-white/10 text-sm text-blue-100">
+            Sin menú asignado
+        </div>
+    @endforelse
+</nav>
         </aside>
 
         <main class="flex-1 p-8">
@@ -118,5 +151,6 @@
             @yield('content')
         </main>
     </div>
+    
 </body>
 </html>

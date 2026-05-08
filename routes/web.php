@@ -65,6 +65,10 @@ Route::middleware(['admin.auth', 'method.override.safe'])
             ->middleware('permission:empresas.ver')
             ->name('empresas.panel');
 
+            Route::get('/mi-panel', [EmpresaPanelController::class, 'miPanel'])
+            ->middleware('permission:empresas.panel')
+            ->name('empresas.mi-panel');
+
         Route::prefix('empresas/{empresa}')
             ->name('empresas.')
             ->group(function () {

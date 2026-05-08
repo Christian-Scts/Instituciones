@@ -62,17 +62,25 @@ class MenuService
     }
 
     private function patternsForRoute(?string $routeName): array
-    {
-        return match ($routeName) {
-            'admin.dashboard' => ['admin/dashboard*'],
-            'admin.empresas.index' => ['admin/empresas*'],
-            'admin.reportes.index' => ['admin/reportes*'],
-            'admin.logs.index' => ['admin/logs*'],
-            'admin.pruebas.index' => ['admin/pruebas*'],
-            'admin.seguridad.index' => ['admin/seguridad*'],
-            'admin.usuarios.index' => ['admin/usuarios*'],
-            'admin.roles.index' => ['admin/roles*'],
-            default => [],
-        };
-    }
+{
+    return match ($routeName) {
+        'admin.dashboard' => ['admin/dashboard*'],
+
+        'admin.empresas.index' => ['admin/empresas*'],
+        'admin.empresas.mi-panel' => ['admin/mi-panel*'],
+        'admin.reportes.index' => ['admin/reportes*'],
+        'admin.logs.index' => ['admin/logs*'],
+        'admin.pruebas.index' => ['admin/pruebas*'],
+        'admin.seguridad.index' => ['admin/seguridad*'],
+
+        'admin.usuarios.index' => ['admin/usuarios*'],
+        'admin.roles.index' => ['admin/roles*'],
+        'admin.permissions.index' => ['admin/permissions*'],
+
+        'admin.menu-grupos.index' => ['admin/menu-grupos*'],
+        'admin.menu-elementos.index' => ['admin/menu-elementos*'],
+
+        default => [],
+    };
+}
 }

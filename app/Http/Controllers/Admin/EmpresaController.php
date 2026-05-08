@@ -9,22 +9,34 @@ use App\Models\Empresa;
 use Illuminate\Support\Facades\Crypt;
 use Illuminate\Support\Facades\Hash;
 use Illuminate\Support\Str;
+use App\Support\AdminEmpresaScope;
 
 class EmpresaController extends Controller
 {
+
     public function index()
-    {
-        $empresas = Empresa::latest()->paginate(20);
-        return view('admin.empresas.index', compact('empresas'));
-    }
+{
+    $empresas = AdminEmpresaScope::filtrarEmpresas(
+        Empresa::query()
+    )->latest()->paginate(20);
+
+    return view('admin.empresas.index', compact('empresas'));
+}
 
     public function create()
     {
+        if (!AdminEmpresaScope::esGlobal()) {
+        abort(403);
+    }
         return view('admin.empresas.create');
     }
 
 public function store(EmpresaStoreRequest $request)
 {
+    if (!AdminEmpresaScope::esGlobal()) {
+        abort(403);
+    }
+    
     $data = $request->validated();
 
     $plainPassword = $data['endpoint_password'];
@@ -69,13 +81,21 @@ public function store(EmpresaStoreRequest $request)
         ->with('success', 'Empresa registrada correctamente.');
 }
 
+
     public function edit(Empresa $empresa)
-    {
-        return view('admin.empresas.edit', compact('empresa'));
+{
+    if (!AdminEmpresaScope::esGlobal()) {
+        abort(403);
     }
+    AdminEmpresaScope::validarEmpresa($empresa->id);
+
+    return view('admin.empresas.edit', compact('empresa'));
+}
 
 public function update(EmpresaUpdateRequest $request, Empresa $empresa)
 {
+    AdminEmpresaScope::validarEmpresa($empresa->id);
+
     $data = $request->validated();
 
     $whitelistText = $request->input('ip_whitelist_text', '');

@@ -10,12 +10,14 @@ use App\Models\Empresa;
 use App\Models\EmpresaCliente;
 use App\Models\EmpresaClienteImportacion;
 use Illuminate\Support\Facades\Storage;
+use App\Support\AdminEmpresaScope;
 use Illuminate\Http\Request;
 
 class EmpresaClienteController extends Controller
 {
     public function index(Empresa $empresa, Request $request)
     {
+        AdminEmpresaScope::validarEmpresa($empresa->id);
         $query = EmpresaCliente::where('empresa_id', $empresa->id);
 
         if ($search = trim((string) $request->input('q'))) {
@@ -38,11 +40,13 @@ class EmpresaClienteController extends Controller
 
     public function create(Empresa $empresa)
     {
+        AdminEmpresaScope::validarEmpresa($empresa->id);
         return view('admin.empresas.clientes.create', compact('empresa'));
     }
 
     public function store(Empresa $empresa, EmpresaClienteStoreRequest $request)
     {
+        AdminEmpresaScope::validarEmpresa($empresa->id);
         $data = $request->validated();
         $data['empresa_id'] = $empresa->id;
 
@@ -55,6 +59,7 @@ class EmpresaClienteController extends Controller
 
     public function edit(Empresa $empresa, EmpresaCliente $cliente)
     {
+        AdminEmpresaScope::validarEmpresa($empresa->id);
         abort_unless($cliente->empresa_id === $empresa->id, 404);
 
         return view('admin.empresas.clientes.edit', compact('empresa', 'cliente'));
@@ -62,6 +67,7 @@ class EmpresaClienteController extends Controller
 
     public function update(Empresa $empresa, EmpresaCliente $cliente, EmpresaClienteUpdateRequest $request)
     {
+        AdminEmpresaScope::validarEmpresa($empresa->id);
         abort_unless($cliente->empresa_id === $empresa->id, 404);
 
         $cliente->update($request->validated());
@@ -73,6 +79,7 @@ class EmpresaClienteController extends Controller
 
     public function destroy(Empresa $empresa, EmpresaCliente $cliente)
     {
+        AdminEmpresaScope::validarEmpresa($empresa->id);
         abort_unless($cliente->empresa_id === $empresa->id, 404);
 
         $cliente->delete();
@@ -82,11 +89,13 @@ class EmpresaClienteController extends Controller
 
     public function importForm(Empresa $empresa)
     {
+        AdminEmpresaScope::validarEmpresa($empresa->id);
         return view('admin.empresas.clientes.import', compact('empresa'));
     }
 
     public function import(Empresa $empresa, Request $request)
 {
+    AdminEmpresaScope::validarEmpresa($empresa->id);
     $request->validate([
         'archivo' => ['required', 'file', 'mimes:csv,txt,xlsx,xls'],
         'sobrescribir' => ['nullable', 'boolean'],
@@ -113,6 +122,7 @@ class EmpresaClienteController extends Controller
 
 public function importsIndex(Empresa $empresa)
 {
+    AdminEmpresaScope::validarEmpresa($empresa->id);
     $importaciones = EmpresaClienteImportacion::where('empresa_id', $empresa->id)
         ->latest()
         ->paginate(20);

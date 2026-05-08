@@ -9,6 +9,7 @@ use App\Models\PuiLog;
 use App\Models\PuiReporte;
 use App\Models\PuiToken;
 use Illuminate\Support\Facades\DB;
+use App\Support\AdminEmpresaScope;
 
 class DashboardController extends Controller
 {
@@ -44,110 +45,159 @@ class DashboardController extends Controller
     }
 
     private function buildStats(): array
-    {
-        $logsHoy = PuiLog::whereDate('created_at', today())->count();
-        $erroresHoy = PuiLog::whereDate('created_at', today())
+{
+    $logsHoy = AdminEmpresaScope::filtrarPorEmpresaId(
+        PuiLog::whereDate('created_at', today())
+    )->count();
+
+    $erroresHoy = AdminEmpresaScope::filtrarPorEmpresaId(
+        PuiLog::whereDate('created_at', today())
             ->whereNotNull('error')
-            ->count();
+    )->count();
 
-        $totalCoincidencias = PuiCoincidencia::count();
-        $coincidenciasExitosas = PuiCoincidencia::where('http_code', 200)->count();
+    $totalCoincidencias = AdminEmpresaScope::filtrarPorEmpresaId(
+        PuiCoincidencia::query()
+    )->count();
 
-        return [
-            'empresas' => Empresa::count(),
-            'empresas_activas' => Empresa::where('activo', true)->count(),
-            'tokens_activos' => PuiToken::where('estatus', 'activo')
+    $coincidenciasExitosas = AdminEmpresaScope::filtrarPorEmpresaId(
+        PuiCoincidencia::where('http_code', 200)
+    )->count();
+
+    return [
+        'empresas' => AdminEmpresaScope::filtrarEmpresas(
+            Empresa::query()
+        )->count(),
+
+        'empresas_activas' => AdminEmpresaScope::filtrarEmpresas(
+            Empresa::where('activo', true)
+        )->count(),
+
+        'tokens_activos' => AdminEmpresaScope::filtrarPorEmpresaId(
+            PuiToken::where('estatus', 'activo')
                 ->where('expira_en', '>', now())
-                ->count(),
-            'reportes_totales' => PuiReporte::count(),
-            'reportes_activos' => PuiReporte::whereNull('baja_en')->count(),
-            'reportes_prueba' => PuiReporte::where('es_prueba', true)->count(),
-            'reportes_desactivados' => PuiReporte::where('estatus', 'desactivado')->count(),
-            'coincidencias_totales' => $totalCoincidencias,
-            'errores_hoy' => $erroresHoy,
-            'logs_hoy' => $logsHoy,
-            'tasa_error' => $logsHoy > 0 ? round(($erroresHoy / $logsHoy) * 100, 2) : 0,
-            'efectividad' => $totalCoincidencias > 0
-                ? round(($coincidenciasExitosas / $totalCoincidencias) * 100, 2)
-                : 100,
-        ];
-    }
+        )->count(),
+
+        'reportes_totales' => AdminEmpresaScope::filtrarPorEmpresaId(
+            PuiReporte::query()
+        )->count(),
+
+        'reportes_activos' => AdminEmpresaScope::filtrarPorEmpresaId(
+            PuiReporte::whereNull('baja_en')
+        )->count(),
+
+        'reportes_prueba' => AdminEmpresaScope::filtrarPorEmpresaId(
+            PuiReporte::where('es_prueba', true)
+        )->count(),
+
+        'reportes_desactivados' => AdminEmpresaScope::filtrarPorEmpresaId(
+            PuiReporte::where('estatus', 'desactivado')
+        )->count(),
+
+        'coincidencias_totales' => $totalCoincidencias,
+
+        'errores_hoy' => $erroresHoy,
+
+        'logs_hoy' => $logsHoy,
+
+        'tasa_error' => $logsHoy > 0
+            ? round(($erroresHoy / $logsHoy) * 100, 2)
+            : 0,
+
+        'efectividad' => $totalCoincidencias > 0
+            ? round(($coincidenciasExitosas / $totalCoincidencias) * 100, 2)
+            : 100,
+    ];
+}
 
     private function ultimosLogs()
-    {
-        return PuiLog::with('empresa')
-            ->latest()
-            ->limit(10)
-            ->get([
-                'id',
-                'empresa_id',
-                'endpoint',
-                'metodo',
-                'id_busqueda',
-                'http_code',
-                'error',
-                'created_at',
-            ]);
-    }
+        {
+            return AdminEmpresaScope::filtrarPorEmpresaId(
+                    PuiLog::with('empresa')
+                )
+                ->latest()
+                ->limit(10)
+                ->get([
+                    'id',
+                    'empresa_id',
+                    'endpoint',
+                    'metodo',
+                    'id_busqueda',
+                    'http_code',
+                    'error',
+                    'created_at',
+                ]);
+        }
 
     private function ultimosReportes()
-    {
-        return PuiReporte::with('empresa')
-            ->latest()
-            ->limit(10)
-            ->get([
-                'id',
-                'empresa_id',
-                'id_busqueda',
-                'curp',
-                'fase_actual',
-                'estatus',
-                'es_prueba',
-                'alta_en',
-                'baja_en',
-                'created_at',
-            ]);
-    }
+{
+    return AdminEmpresaScope::filtrarPorEmpresaId(
+            PuiReporte::with('empresa')
+        )
+        ->latest()
+        ->limit(10)
+        ->get([
+            'id',
+            'empresa_id',
+            'id_busqueda',
+            'curp',
+            'fase_actual',
+            'estatus',
+            'es_prueba',
+            'alta_en',
+            'baja_en',
+            'created_at',
+        ]);
+}
 
     private function coincidenciasPorFase(): array
-    {
-        $rows = PuiCoincidencia::select('fase_busqueda', DB::raw('COUNT(*) as total'))
-            ->groupBy('fase_busqueda')
-            ->orderBy('fase_busqueda')
-            ->get();
+{
+    $rows = AdminEmpresaScope::filtrarPorEmpresaId(
+            PuiCoincidencia::select(
+                'fase_busqueda',
+                DB::raw('COUNT(*) as total')
+            )
+        )
+        ->groupBy('fase_busqueda')
+        ->orderBy('fase_busqueda')
+        ->get();
 
-        return [
-            '1' => (int) optional($rows->firstWhere('fase_busqueda', '1'))->total,
-            '2' => (int) optional($rows->firstWhere('fase_busqueda', '2'))->total,
-            '3' => (int) optional($rows->firstWhere('fase_busqueda', '3'))->total,
-        ];
-    }
+    return [
+        '1' => (int) optional($rows->firstWhere('fase_busqueda', '1'))->total,
+        '2' => (int) optional($rows->firstWhere('fase_busqueda', '2'))->total,
+        '3' => (int) optional($rows->firstWhere('fase_busqueda', '3'))->total,
+    ];
+}
 
     private function reportesPorEstatus(): array
-    {
-        return PuiReporte::query()
+{
+    return AdminEmpresaScope::filtrarPorEmpresaId(
+            PuiReporte::query()
+        )
         ->selectRaw('estatus, COUNT(*) as total')
         ->groupBy('estatus')
         ->pluck('total', 'estatus')
         ->map(fn ($value) => (int) $value)
         ->toArray();
-    }
+}
 
     private function empresasEstado()
-    {
-        return Empresa::orderBy('razon_social')
-            ->get([
-                'id',
-                'rfc',
-                'razon_social',
-                'ambiente',
-                'activo',
-                'aprobado_sandbox',
-                'aprobado_productivo',
-                'ultimo_login_ok_en',
-                'ultima_prueba_webhook_en',
-            ]);
-    }
+{
+    return AdminEmpresaScope::filtrarEmpresas(
+            Empresa::query()
+        )
+        ->orderBy('razon_social')
+        ->get([
+            'id',
+            'rfc',
+            'razon_social',
+            'ambiente',
+            'activo',
+            'aprobado_sandbox',
+            'aprobado_productivo',
+            'ultimo_login_ok_en',
+            'ultima_prueba_webhook_en',
+        ]);
+}
 
     private function queueEstado(): array
     {
@@ -167,15 +217,17 @@ class DashboardController extends Controller
 
     private function saludSistema(): array
     {
-        $erroresHoy = PuiLog::whereDate('created_at', today())
-            ->whereNotNull('error')
-            ->count();
+        $erroresHoy = AdminEmpresaScope::filtrarPorEmpresaId(
+            PuiLog::whereDate('created_at', today())
+                ->whereNotNull('error')
+        )->count();
 
         $failedJobs = DB::table('failed_jobs')->count();
         $jobsPendientes = DB::table('jobs')->count();
 
-        $latenciaPromedio = PuiLog::whereDate('created_at', today())
-            ->avg('duracion_ms') ?? 0;
+        $latenciaPromedio = AdminEmpresaScope::filtrarPorEmpresaId(
+            PuiLog::whereDate('created_at', today())
+        )->avg('duracion_ms') ?? 0;
 
         $color = 'green';
         $label = 'SALUDABLE';
@@ -229,9 +281,10 @@ class DashboardController extends Controller
             ];
         }
 
-        $erroresHoy = PuiLog::whereDate('created_at', today())
-            ->whereNotNull('error')
-            ->count();
+        $erroresHoy = AdminEmpresaScope::filtrarPorEmpresaId(
+            PuiLog::whereDate('created_at', today())
+                ->whereNotNull('error')
+        )->count();
         if ($erroresHoy > 0) {
             $alertas[] = [
                 'tipo' => 'warning',
@@ -240,9 +293,14 @@ class DashboardController extends Controller
             ];
         }
 
-        $reportesActivosSinMonitoreo = PuiReporte::whereNull('baja_en')
-            ->whereIn('estatus', ['activo', 'fase_1_completada', 'fase_2_completada'])
-            ->count();
+        $reportesActivosSinMonitoreo = AdminEmpresaScope::filtrarPorEmpresaId(
+        PuiReporte::whereNull('baja_en')
+                ->whereIn('estatus', [
+                    'activo',
+                    'fase_1_completada',
+                    'fase_2_completada'
+                ])
+        )->count();
 
         if ($reportesActivosSinMonitoreo > 0) {
             $alertas[] = [
@@ -252,8 +310,9 @@ class DashboardController extends Controller
             ];
         }
 
-        $latenciaPromedio = PuiLog::whereDate('created_at', today())
-            ->avg('duracion_ms') ?? 0;
+        $latenciaPromedio = AdminEmpresaScope::filtrarPorEmpresaId(
+            PuiLog::whereDate('created_at', today())
+        )->avg('duracion_ms') ?? 0;
 
         if ($latenciaPromedio > 2000) {
             $alertas[] = [

@@ -9,11 +9,13 @@ use App\Models\PuiCoincidencia;
 use App\Models\PuiLog;
 use App\Models\PuiReporte;
 use App\Models\PuiToken;
+use App\Support\AdminEmpresaScope;
 
 class EmpresaPanelController extends Controller
 {
     public function show(Empresa $empresa)
     {
+        AdminEmpresaScope::validarEmpresa($empresa->id);
         $stats = [
             'clientes' => EmpresaCliente::where('empresa_id', $empresa->id)->count(),
             'reportes' => PuiReporte::where('empresa_id', $empresa->id)->count(),
@@ -55,4 +57,19 @@ class EmpresaPanelController extends Controller
             'ultimosLogs'
         ));
     }
+
+      public function miPanel()
+{
+    $empresaId = session('admin_user.empresa_id');
+
+    if (!$empresaId) {
+        return redirect()
+            ->route('admin.empresas.index')
+            ->with('error', 'Tu usuario no está vinculado a una empresa específica.');
+    }
+
+    $empresa = Empresa::findOrFail($empresaId);
+
+    return $this->show($empresa);
+}
 }
