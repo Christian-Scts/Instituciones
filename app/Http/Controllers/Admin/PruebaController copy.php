@@ -41,10 +41,10 @@ class PruebaController extends Controller
 
         $token = null;
         $status = 500;
-        $body = ['error' => 'No se ejecuto la prueba'];
+        $body = ['error' => 'No se ejecut贸 la prueba'];
 
         try {
-            $loginResponse = app(PuiClienteService::class)->loginInstitucional($empresa);
+            $loginResponse = app(PuiClienteService::class)->loginPui($empresa);
 
             if (!$loginResponse->successful()) {
                 $status = $loginResponse->status();
@@ -96,7 +96,7 @@ class PruebaController extends Controller
         $body = ['error' => 'No se ejecut贸 la prueba'];
 
         try {
-            $response = $clienteService->loginInstitucional($empresa);
+            $response = $clienteService->loginPui($empresa);
             $status = $response->status();
             $body = $response->json() ?: ['raw' => $response->body()];
         } catch (\Throwable $e) {
@@ -141,7 +141,7 @@ class PruebaController extends Controller
     $body = ['error' => 'No se ejecutó la prueba'];
 
     try {
-        $loginResponse = app(PuiClienteService::class)->loginInstitucional($empresa);
+        $loginResponse = app(PuiClienteService::class)->loginPui($empresa);
 
         if (!$loginResponse->successful()) {
             $status = $loginResponse->status();
