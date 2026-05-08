@@ -16,8 +16,8 @@ class CheckPermission
         }
 
         if (!in_array($permission, $permissions, true)) {
-            abort(403, 'No tienes permiso para acceder a esta sección.');
-        }
+                abort(403);
+            }
 
         return $next($request);
     }
